@@ -13,10 +13,12 @@ func main() {
 	var dataFilePath string
 	var logLevel string
 	var listenOn string
+	var rootRedirectLocation string
 
 	flag.StringVar(&dataFilePath, "data-file-path", "", "Location of the JSON DB file")
 	flag.StringVar(&logLevel, "log-level", "info", "log level: debug, info, warning, error, fatal, panic")
 	flag.StringVar(&listenOn, "listen", "", "<host>:<port> to listen on")
+	flag.StringVar(&rootRedirectLocation, "root-redirect", "", "Where to redirect for /")
 
 	flag.Usage = func() {
 		fmt.Println("apocalypse2016 usage:")
@@ -63,12 +65,19 @@ func main() {
 
 	go server.Run()
 
+	// HTTP endpoints:
+	if rootRedirectLocation != "" {
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, rootRedirectLocation, http.StatusTemporaryRedirect)
+		})
+	}
 	http.HandleFunc("/oauth", func(w http.ResponseWriter, r *http.Request) {
 		server.handleOAuth(w, r)
 	})
 	http.HandleFunc("/trump", func(w http.ResponseWriter, r *http.Request) {
 		server.handleTrump(w, r)
 	})
+
 	err = http.ListenAndServe(listenOn, nil)
 	if err != nil {
 		fmt.Printf("Error listening on %s: %s\n", listenOn, err)

@@ -305,6 +305,12 @@ func (s *Server) handleOAuth(w http.ResponseWriter, r *http.Request) {
 	default:
 	}
 
+	if errorReason := r.URL.Query().Get("error"); errorReason == "access_denied" {
+		// user clicked "Cancel"
+		w.Write([]byte("Maybe next time!"))
+		return
+	}
+
 	oauthCode := r.URL.Query().Get("code")
 	if oauthCode == "" {
 		log.Errorf("Error: handleOAuth missing 'code'")
@@ -360,5 +366,6 @@ func (s *Server) handleOAuth(w http.ResponseWriter, r *http.Request) {
 	s.mutex.Unlock()
 
 	log.WithFields(logFields).Infof("Successfully received access token: %s with method %s", oauthResponse.AccessToken, oauthResponse.Scope)
-	w.Write([]byte("Success!"))
+
+	http.Redirect(w, r, oauthResponse.IncomingWebhook.ConfigurationURL, http.StatusTemporaryRedirect)
 }
