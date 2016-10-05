@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/ChimeraCoder/anaconda"
 	log "github.com/Sirupsen/logrus"
 	"net/http"
 	"os"
@@ -26,6 +27,11 @@ func main() {
 		fmt.Println("\nIn addition, the following environment variables are required:")
 		fmt.Println("  CLIENT_ID\n    \tSlack client ID")
 		fmt.Println("  CLIENT_SECRET\n    \tSlack client secret")
+		fmt.Println("\nThe following environment variables are optional:")
+		fmt.Println("  TWITTER_CONSUMER_KEY\n    \tTwitter API consumer key")
+		fmt.Println("  TWITTER_CONSUMER_SECRET\n    \tTwitter API consumer secret")
+		fmt.Println("  TWITTER_ACCESS_TOKEN\n    \tTwitter API access token")
+		fmt.Println("  TWITTER_ACCESS_TOKEN_SECRET\n    \tTwitter API access secret")
 	}
 	flag.Parse()
 
@@ -39,6 +45,10 @@ func main() {
 
 	clientID := os.Getenv("CLIENT_ID")
 	clientSecret := os.Getenv("CLIENT_SECRET")
+	twitterAPIConsumerKey := os.Getenv("TWITTER_KEY")
+	twitterAPIConsumerSecret := os.Getenv("TWITTER_SECRET")
+	twitterAccessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
+	twitterAccessTokenSecret := os.Getenv("TWITTER_ACCESS_TOKEN_SECRET")
 
 	if clientID == "" || clientSecret == "" || dataFilePath == "" || listenOn == "" {
 		flag.Usage()
@@ -49,6 +59,14 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error instantiating Server: %s\n", err)
 		os.Exit(-1)
+	}
+
+	if twitterAPIConsumerKey != "" && twitterAPIConsumerSecret != "" && twitterAccessToken != "" && twitterAccessTokenSecret != "" {
+		anaconda.SetConsumerKey(twitterAPIConsumerKey)
+		anaconda.SetConsumerSecret(twitterAPIConsumerSecret)
+		server.SetTwitterAPI(anaconda.NewTwitterApi(twitterAccessToken, twitterAccessTokenSecret))
+	} else {
+		log.Infof("Twitter API consumer key and/or secret are missing - will not send any tweets")
 	}
 
 	// watch for ^C
